@@ -1,49 +1,13 @@
 # ioBroker.ws.client - @iobroker/ws
 
-This library is used for communication with front-end via pure web-sockets.
+This library is used for communication with back-end via pure web-sockets.
 
 It simulates socket.io interface.
 
-It is used normally together with @iobroker/ws on browser side, and it is not compatible with socket.io.client library 
+It is used normally together with ioBroker.ws.server on server side, and it is not compatible with socket.io (server) library.
 
 ## Usage
-```
-const http = require('http');
-const socket = require('./ws');
-
-const requestListener = function (req, res) {
-  res.writeHead(200);
-  res.end('Hello, World!');
-};
-
-// create web server
-const webServer    = http.createServer(requestListener);
-// create web socket server
-const socketServer = socket.listen(webServer, {pingInterval: 120000, pingTimeout: 30000});
-
-// install event handlers on socket connection
-function onConnection(socket, initDone) {
-    console.log('==> Connected IP: ' + socket.connection.remoteAddress);
-    
-    socket.on('message', function (data, cb) {
-        console.log('Received ' + data);
-        cb(data + 1);
-    });
-    
-    socket.on('disconnect', function (error) {
-        console.log(`<== Disconnect from ${socket.connection.remoteAddress}: ${error}`);
-    });
-    
-    initDone && initDone();
-}
-
-// install event handlers of the socket server
-socketServer.on('connection', onConnection);
-socketServer.on('error', (e, details) => console.error(`Server error: ${e}${details ? ' - ' + details : ''}`));
-
-// start web server
-webServer.listen(5000);
-```
+In the same way as socket.io.client library
 
 <!--
 	Placeholder for the next version (at the beginning of the line):
