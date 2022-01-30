@@ -17,6 +17,9 @@
     "type": "git",
     "url": "https://github.com/ioBroker/ioBroker.ws.client"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {},
   "devDependencies": {
     "@alcalzone/release-script": "^3.5.0",
