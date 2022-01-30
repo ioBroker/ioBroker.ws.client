@@ -15,7 +15,7 @@ In the same way as socket.io.client library
 -->
 
 ## Changelog
-### __WORK IN PROGRESS__
+### 1.0.1 (2022-01-30)
 * (bluefox) initial commit
 
 ## License
