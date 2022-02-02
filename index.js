@@ -74,6 +74,12 @@ function SocketClient () {
 
     this.connect = (_url, _options) => {
         this.log.debug('Try to connect');
+
+        // remove hash
+        if (_url) {
+            _url = _url.split('#')[0]
+        }
+
         id = 0;
         connectTimer && clearInterval(connectTimer);
         connectTimer = null;
