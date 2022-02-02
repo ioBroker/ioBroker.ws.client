@@ -77,7 +77,7 @@ function SocketClient () {
 
         // remove hash
         if (_url) {
-            _url = _url.split('#')[0]
+            _url = _url.split('#')[0];
         }
 
         id = 0;
