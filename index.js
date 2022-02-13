@@ -387,6 +387,9 @@ function SocketClient () {
         this._reconnect();
     };
 
+    // alias for back compatibility
+    this.disconnect = this.close;
+
     this.destroy = function () {
         this.close();
         connectTimer && clearTimeout(connectTimer);

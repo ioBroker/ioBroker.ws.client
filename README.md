@@ -15,6 +15,9 @@ In the same way as socket.io.client library
 -->
 
 ## Changelog
+### __WORK IN PROGRESS__
+* (bluefox) Added disconnect for back compatibility
+
 ### 1.0.3 (2022-02-02)
 * (bluefox) Fixed error if URL contains #
 
