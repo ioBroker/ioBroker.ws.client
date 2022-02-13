@@ -15,7 +15,7 @@ In the same way as socket.io.client library
 -->
 
 ## Changelog
-### __WORK IN PROGRESS__
+### 1.0.4 (2022-02-13)
 * (bluefox) Added disconnect for back compatibility
 
 ### 1.0.3 (2022-02-02)
