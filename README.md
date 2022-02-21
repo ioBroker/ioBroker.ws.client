@@ -15,6 +15,9 @@ In the same way as socket.io.client library
 -->
 
 ## Changelog
+### __WORK IN PROGRESS__
+* (bluefox) Made it possible to have more than one socket from one page
+
 ### 1.0.4 (2022-02-13)
 * (bluefox) Added disconnect for back compatibility
 

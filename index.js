@@ -37,6 +37,13 @@ const ERRORS = {
     1015: 'TLS handshake fail' 		// Transport Layer Security handshake failure
 };
 
+// every time create a new socket
+function connect(url, options) {
+    const socket = new SocketClient();
+    socket.connect(url, options);
+    return socket;
+}
+
 // possible events: connect, disconnect, reconnect, error, connect_error
 function SocketClient () {
     const handlers      = {};
@@ -415,4 +422,6 @@ function SocketClient () {
 }
 
 // eslint-disable-next-line no-undef
-window.io = new SocketClient();
+window.io = {
+    connect: connect
+};
