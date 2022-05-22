@@ -15,7 +15,7 @@ In the same way as socket.io.client library
 -->
 
 ## Changelog
-### **WORK IN PROGRESS**
+### 1.1.1 (2022-05-22)
 * (bluefox) Cosmetic change done
 
 ### 1.1.0 (2022-02-21)
