@@ -11,10 +11,13 @@ In the same way as socket.io.client library
 
 <!--
 	Placeholder for the next version (at the beginning of the line):
-	### __WORK IN PROGRESS__
+	### **WORK IN PROGRESS**
 -->
 
 ## Changelog
+### **WORK IN PROGRESS**
+* (bluefox) Cosmetic change done
+
 ### 1.1.0 (2022-02-21)
 * (bluefox) Made it possible to have more than one socket from one page
 

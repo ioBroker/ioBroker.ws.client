@@ -115,6 +115,10 @@ function SocketClient () {
                 delete query.sid;
             }
 
+            if (query.hasOwnProperty('')) {
+                delete query[''];
+            }
+
             let u = url.replace(/^http/, 'ws').split('?')[0] + '?sid=' + sessionID;
 
             // Apply query to new url
