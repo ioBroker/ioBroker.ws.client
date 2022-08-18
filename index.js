@@ -2,7 +2,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2022, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 1.1.1 (2022_05_22)
+ * v 1.1.2 (2022_08_18)
  */
 /* jshint -W097 */
 /* jshint strict: false */
