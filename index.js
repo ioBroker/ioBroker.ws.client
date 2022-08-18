@@ -105,8 +105,14 @@ function SocketClient () {
         sessionID = Date.now();
         try {
             if (url === '/') {
+                let parts = window.location.pathname.split('/');
+                // remove filename
+                if (window.location.pathname.endsWith('.html') || window.location.pathname.endsWith('.htm')) {
+                    parts.pop();
+                }
+
                 // eslint-disable-next-line no-undef
-                url = window.location.protocol + '//' + window.location.host  + '/';
+                url = window.location.protocol + '//' + window.location.host  + '/' + parts.join('/');
             }
 
             // extract all query attributes
@@ -314,9 +320,16 @@ function SocketClient () {
 
         id++;
 
-        if (name === 'writeFile' && typeof arg3 !== 'string') {
-            // _adapter, filename, data, callback
-            arg3 = arg3 && btoa(String.fromCharCode.apply(null, new Uint8Array(arg3)));
+        if (name === 'writeFile' && typeof arg3 !== 'string' && arg3) {
+            // Arguments: arg1,     arg2,     arg3, arg4
+            // Arguments: _adapter, filename, data, callback
+            let binary = '';
+            const bytes = new Uint8Array(arg3);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            arg3 = window.btoa(binary);
         }
 
         try {
@@ -396,6 +409,7 @@ function SocketClient () {
         callbacks = [];
 
         this._reconnect();
+        return this;
     };
 
     // alias for back compatibility

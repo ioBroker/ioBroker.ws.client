@@ -2,12 +2,12 @@
 
 This library is used for communication with back-end via pure web-sockets.
 
-It simulates socket.io interface.
+It simulates `socket.io` interface.
 
-It is used normally together with ioBroker.ws.server on server side, and it is not compatible with socket.io (server) library.
+It is used normally together with `ioBroker.ws.server` on server side, and it is not compatible with `socket.io` (server) library.
 
 ## Usage
-In the same way as socket.io.client library
+In the same way as `socket.io.client` library
 
 <!--
 	Placeholder for the next version (at the beginning of the line):
@@ -15,6 +15,9 @@ In the same way as socket.io.client library
 -->
 
 ## Changelog
+### **WORK IN PROGRESS**
+* (bluefox) improved `writeFile` call
+
 ### 1.1.1 (2022-05-22)
 * (bluefox) Cosmetic change done
 
