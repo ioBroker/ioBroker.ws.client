@@ -1,0 +1,27 @@
+// Root tsconfig to set the settings and power editor support for all TS files
+{
+    "compilerOptions": {
+        "lib": ["es2023", "dom"],
+        "strict": true,
+        // do not compile anything. This file is just to configure type checking
+        "allowJs": true,
+        "checkJs": false,
+        "noEmit": false,
+        "declaration": true,
+        "skipLibCheck": true,
+        "module": "commonjs",
+        "resolveJsonModule": true,
+        "target": "esnext",
+        "baseUrl": ".",
+        "jsx": "preserve",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "noImplicitAny": true,
+        // "noUnusedLocals": true,
+        // "noUnusedParameters": true,
+        "useUnknownInCatchVariables": false,
+        "outDir": "./dist/esm"
+    },
+    "include": ["**/*.ts", "**/*.d.ts",],
+    "exclude": ["node_modules/**"]
+}
