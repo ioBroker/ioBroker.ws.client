@@ -2,7 +2,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2024, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 1.1.3 (2024_10_02)
+ * v 2.0.0 (2024_10_02)
  */
 interface ConnectOptions {
     /** Connection name, so the backend knows who wants to connect. Optional */

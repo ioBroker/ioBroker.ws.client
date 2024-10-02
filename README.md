@@ -16,10 +16,9 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.0.0 (2024-10-02)
 
 -   (@GermanBluefox) Code was rewritten with typescript
-
 
 ### 1.1.2 (2022-08-18)
 
