@@ -16,36 +16,40 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
+### **WORK IN PROGRESS**
+
+-   (@GermanBluefox) Code was rewritten with typescript
+
 
 ### 1.1.2 (2022-08-18)
 
--   (bluefox) improved `writeFile` call
+-   (@GermanBluefox) improved `writeFile` call
 
 ### 1.1.1 (2022-05-22)
 
--   (bluefox) Cosmetic change done
+-   (@GermanBluefox) Cosmetic change done
 
 ### 1.1.0 (2022-02-21)
 
--   (bluefox) Made it possible to have more than one socket from one page
+-   (@GermanBluefox) Made it possible to have more than one socket from one page
 
 ### 1.0.4 (2022-02-13)
 
--   (bluefox) Added disconnect for back compatibility
+-   (@GermanBluefox) Added disconnect for back compatibility
 
 ### 1.0.3 (2022-02-02)
 
--   (bluefox) Fixed error if URL contains #
+-   (@GermanBluefox) Fixed error if URL contains #
 
 ### 1.0.2 (2022-01-30)
 
--   (bluefox) initial commit
+-   (@GermanBluefox) initial commit
 
 ## License
 
 The MIT License (MIT)
 
-Copyright (c) 2020-2024 Bluefox <dogafox@gmail.com>
+Copyright (c) 2020-2024 @GermanBluefox <dogafox@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

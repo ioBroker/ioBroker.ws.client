@@ -28,18 +28,19 @@
         "@iobroker/eslint-config": "^0.1.6",
         "chai": "^4.5.0",
         "mocha": "^10.7.3",
+        "terser": "^5.34.1",
         "typescript": "^5.6.2"
     },
     "bugs": {
         "url": "https://github.com/ioBroker/ioBroker.web/issues"
     },
-    "main": "dist/cjs/index.js",
-    "module": "dist/esm/index.js",
+    "main": "dist/cjs/socket.io.js",
+    "module": "dist/esm/socket.io.js",
     "exports": {
         ".": {
-            "import": "./dist/esm/index.js",
-            "require": "./dist/cjs/index.js",
-            "types": "./dist/esm/index.d.ts"
+            "import": "./dist/esm/socket.io.js",
+            "require": "./dist/cjs/socket.io.js",
+            "types": "./dist/esm/types.d.ts"
         },
         "./package.json": "./package.json"
     },
@@ -47,10 +48,10 @@
     "typesVersions": {
         "*": {
             "dist/esm/index.d.ts": [
-                "dist/esm/index.d.ts"
+                "dist/esm/types.d.ts"
             ],
             "dist/cjs/index.d.ts": [
-                "dist/esm/index.d.ts"
+                "dist/esm/types.d.ts"
             ],
             "*": [
                 "dist/esm/*"
@@ -66,7 +67,8 @@
     "scripts": {
         "postbuild": "esm2cjs --in dist/esm --out dist/cjs -l error",
         "test": "node node_modules/mocha/bin/mocha --exit",
-        "build": "node tasks && tsc -p tsconfig.json",
+        "build": "node tasks && tsc -p tsconfig.json && node tasks --post && npm run minify",
+        "minify": "terser dist/esm/socket.io.js --compress ecma=2021,computed_props=false -o dist/esm/socket.io.min.js --source-map \"content='dist/esm/socket.io.js.map'\"",
         "release": "release-script",
         "release-patch": "release-script patch --yes",
         "release-minor": "release-script minor --yes",
