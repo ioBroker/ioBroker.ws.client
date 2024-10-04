@@ -4,7 +4,7 @@ This library is used for communication with the back-end via pure web-sockets.
 
 It simulates `socket.io` interface.
 
-It is used normally together with `ioBroker.ws.server` on server side, and it is not compatible with `socket.io` (server) library.
+It is used normally together with `@iobroker/ws-server` on server side, and it is not compatible with `socket.io` (server) library.
 
 ## Usage
 
