@@ -27,7 +27,7 @@
     "@alcalzone/release-script-plugin-license": "^3.7.0",
     "@iobroker/eslint-config": "^0.1.6",
     "chai": "^4.5.0",
-    "mocha": "^10.7.3",
+    "mocha": "^10.8.2",
     "terser": "^5.34.1",
     "typescript": "^5.6.2"
   },
