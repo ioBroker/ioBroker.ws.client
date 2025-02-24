@@ -1,8 +1,8 @@
 /*!
  * ioBroker WebSockets
- * Copyright 2020-2024, bluefox <dogafox@gmail.com>
+ * Copyright 2020-2025, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 2.0.0 (2024_10_02)
+ * v 2.0.0 (2025_02_24)
  */
 interface ConnectOptions {
     /** Connection name, so the backend knows who wants to connect. Optional */
@@ -19,6 +19,8 @@ interface ConnectOptions {
     connectInterval?: number;
     /** Every connection attempt the interval increasing at options.connectInterval till max this number */
     connectMaxAttempt?: number;
+    /** Token for authentication */
+    token?: string;
 }
 
 const MESSAGE_TYPES: Record<string, number> = {
@@ -165,6 +167,9 @@ class SocketClient {
 
             if (this.options?.name && !query.name) {
                 u += `&name=${encodeURIComponent(this.options.name)}`;
+            }
+            if (this.options?.token) {
+                u += `&name=${this.options.token}`;
             }
             // "ws://www.example.com/socketserver"
             // eslint-disable-next-line no-undef

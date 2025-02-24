@@ -106,6 +106,9 @@ class SocketClient {
             if (this.options?.name && !query.name) {
                 u += `&name=${encodeURIComponent(this.options.name)}`;
             }
+            if (this.options?.token) {
+                u += `&name=${this.options.token}`;
+            }
             this.socket = new WebSocket(u);
         }
         catch (error) {

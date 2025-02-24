@@ -16,9 +16,13 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
+### **WORK IN PROGRESS**
+
+-   (@GermanBluefox) Added support for OAuth2 authentication
+
 ### 2.0.0 (2024-10-02)
 
--   (@GermanBluefox) Code was rewritten with typescript
+-   (@GermanBluefox) Code was rewritten with TypeScript
 
 ### 1.1.2 (2022-08-18)
 
