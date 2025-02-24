@@ -16,7 +16,7 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.0.1 (2025-02-24)
 
 -   (@GermanBluefox) Added support for OAuth2 authentication
 
