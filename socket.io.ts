@@ -169,7 +169,7 @@ class SocketClient {
                 u += `&name=${encodeURIComponent(this.options.name)}`;
             }
             if (this.options?.token) {
-                u += `&name=${this.options.token}`;
+                u += `&token=${this.options.token}`;
             }
             // "ws://www.example.com/socketserver"
             // eslint-disable-next-line no-undef
