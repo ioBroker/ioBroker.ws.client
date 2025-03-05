@@ -16,7 +16,7 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.1.0 (2025-03-05)
 
 -   (@GermanBluefox) Fixed lint warnings
 -   (@GermanBluefox) Used TypeScript 5.8
