@@ -29,8 +29,14 @@ export declare class SocketClient {
     constructor();
     connect(url?: string, options?: ConnectOptions): SocketClient;
     emit: (name: string, ...args: any[]) => void;
-    on(name: string, cb: SocketEventHandler | SocketErrorHandler | SocketDisconnectionHandler | SocketConnectionHandler): void;
-    off(name: string, cb: SocketEventHandler | SocketErrorHandler | SocketDisconnectionHandler | SocketConnectionHandler): void;
+    on(
+        name: string,
+        cb: SocketEventHandler | SocketErrorHandler | SocketDisconnectionHandler | SocketConnectionHandler,
+    ): void;
+    off(
+        name: string,
+        cb: SocketEventHandler | SocketErrorHandler | SocketDisconnectionHandler | SocketConnectionHandler,
+    ): void;
     close(): SocketClient;
     disconnect: () => SocketClient;
     destroy(): void;

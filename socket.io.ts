@@ -2,7 +2,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2025, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 2.0.2 (2025_02_24)
+ * v 2.0.2 (2025_03_05)
  */
 interface ConnectOptions {
     /** Connection name, so the backend knows who wants to connect. Optional */
@@ -119,7 +119,6 @@ class SocketClient {
         this.connectTimer && clearInterval(this.connectTimer);
         this.connectTimer = null;
 
-        // eslint-disable-next-line no-undef
         this.url = this.url || url || window.location.href;
         this.options = this.options || JSON.parse(JSON.stringify(options || {}));
         if (!this.options) {
@@ -136,13 +135,12 @@ class SocketClient {
         this.sessionID = Date.now();
         try {
             if (this.url === '/') {
-                let parts = window.location.pathname.split('/');
+                const parts = window.location.pathname.split('/');
                 // remove filename
                 if (window.location.pathname.endsWith('.html') || window.location.pathname.endsWith('.htm')) {
                     parts.pop();
                 }
 
-                // eslint-disable-next-line no-undef
                 this.url = `${window.location.protocol}//${window.location.host}/${parts.join('/')}`;
             }
 
@@ -152,11 +150,11 @@ class SocketClient {
                 delete query.sid;
             }
 
-            if (query.hasOwnProperty('')) {
+            if (Object.prototype.hasOwnProperty.call(query, '')) {
                 delete query[''];
             }
 
-            let u: string = `${this.url.replace(/^http/, 'ws').split('?')[0]}?sid=${this.sessionID}`;
+            let u = `${this.url.replace(/^http/, 'ws').split('?')[0]}?sid=${this.sessionID}`;
 
             // Apply a query to new url
             if (Object.keys(query).length) {
@@ -172,7 +170,6 @@ class SocketClient {
                 u += `&token=${this.options.token}`;
             }
             // "ws://www.example.com/socketserver"
-            // eslint-disable-next-line no-undef
             this.socket = new WebSocket(u);
         } catch (error) {
             this.handlers.error?.forEach(cb => cb.call(this, error));
@@ -222,7 +219,7 @@ class SocketClient {
         };
 
         // @ts-expect-error invalid typing
-        this.socket.onerror = (error: CloseEvent): void  => {
+        this.socket.onerror = (error: CloseEvent): void => {
             if (this.connected && this.socket) {
                 if (this.socket.readyState === 1) {
                     this.log.error(`ws normal error: ${error.type}`);
@@ -241,7 +238,7 @@ class SocketClient {
             let data;
             try {
                 data = JSON.parse(message.data);
-            } catch (e) {
+            } catch {
                 console.error(`Received invalid message: ${JSON.stringify(message.data)}`);
                 return;
             }
@@ -348,7 +345,7 @@ class SocketClient {
             const callback = this.callbacks[i];
             if (callback?.id === id) {
                 const cb = callback.cb;
-                cb.apply(null, args);
+                cb.call(null, ...args);
                 this.callbacks[i] = null;
             }
         }
@@ -396,7 +393,10 @@ class SocketClient {
         }
     };
 
-    on(name: string, cb: SocketEventHandler | SocketErrorHandler | SocketDisconnectionHandler | SocketConnectionHandler): void {
+    on(
+        name: string,
+        cb: SocketEventHandler | SocketErrorHandler | SocketDisconnectionHandler | SocketConnectionHandler,
+    ): void {
         if (cb) {
             if (name === 'connect') {
                 this.connectHandlers.push(cb as SocketConnectionHandler);
@@ -405,7 +405,7 @@ class SocketClient {
             } else if (name === 'reconnect') {
                 this.reconnectHandlers.push(cb as SocketConnectionHandler);
             } else if (name === 'error') {
-                    this.errorHandlers.push(cb as SocketErrorHandler);
+                this.errorHandlers.push(cb as SocketErrorHandler);
             } else {
                 this.handlers[name] = this.handlers[name] || [];
                 this.handlers[name].push(cb as SocketEventHandler);
@@ -413,7 +413,10 @@ class SocketClient {
         }
     }
 
-    off(name: string, cb: SocketEventHandler | SocketErrorHandler | SocketDisconnectionHandler | SocketConnectionHandler): void {
+    off(
+        name: string,
+        cb: SocketEventHandler | SocketErrorHandler | SocketDisconnectionHandler | SocketConnectionHandler,
+    ): void {
         if (name === 'connect') {
             const pos = this.connectHandlers.indexOf(cb as SocketConnectionHandler);
             if (pos !== -1) {
@@ -458,7 +461,7 @@ class SocketClient {
         if (this.socket) {
             try {
                 this.socket.close();
-            } catch (e) {
+            } catch {
                 // ignore
             }
             this.socket = null;
@@ -488,16 +491,19 @@ class SocketClient {
     private _reconnect(): void {
         if (!this.connectTimer) {
             this.log.debug(`Start reconnect ${this.connectionCount}`);
-            this.connectTimer = setTimeout(() => {
-                if (!this.options) {
-                    throw new Error('No options provided!');
-                }
-                this.connectTimer = null;
-                if (this.connectionCount < (this.options?.connectMaxAttempt || 5)) {
-                    this.connectionCount++;
-                }
-                this.connect(this.url, this.options);
-            }, this.connectionCount * (this.options?.connectInterval || 1000));
+            this.connectTimer = setTimeout(
+                () => {
+                    if (!this.options) {
+                        throw new Error('No options provided!');
+                    }
+                    this.connectTimer = null;
+                    if (this.connectionCount < (this.options?.connectMaxAttempt || 5)) {
+                        this.connectionCount++;
+                    }
+                    this.connect(this.url, this.options);
+                },
+                this.connectionCount * (this.options?.connectInterval || 1000),
+            );
         } else {
             this.log.debug(`Reconnect is already running ${this.connectionCount}`);
         }

@@ -1,12 +1,12 @@
 const { readFileSync, writeFileSync, existsSync, unlinkSync, copyFileSync } = require('node:fs');
 
 if (process.argv.includes('--post')) {
-    copyFileSync(`${__dirname}/types.d.ts`, `${__dirname}/dist/esm/types.d.ts`)
+    copyFileSync(`${__dirname}/types.d.ts`, `${__dirname}/dist/esm/types.d.ts`);
 } else {
     const pkg = require('./package.json');
     const date = new Date();
     const originalFile = readFileSync(`${__dirname}/socket.io.ts`).toString('utf8');
-    let file = originalFile
+    let file = originalFile;
     file = file.replace(/2020-20\d\d/, `2020-${date.getFullYear()}`);
     file = file.replace(/v \d.\d.\d/, `v ${pkg.version}`);
     file = file.replace(

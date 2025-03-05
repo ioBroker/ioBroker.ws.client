@@ -19,4 +19,7 @@ export default [
             'jsdoc/require-param': 'off',
         },
     },
+    {
+        ignores: ['dist/**/*', 'test/**/*'],
+    },
 ];

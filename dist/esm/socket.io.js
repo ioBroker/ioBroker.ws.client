@@ -84,7 +84,7 @@ class SocketClient {
         this.sessionID = Date.now();
         try {
             if (this.url === '/') {
-                let parts = window.location.pathname.split('/');
+                const parts = window.location.pathname.split('/');
                 if (window.location.pathname.endsWith('.html') || window.location.pathname.endsWith('.htm')) {
                     parts.pop();
                 }
@@ -94,7 +94,7 @@ class SocketClient {
             if (query.sid) {
                 delete query.sid;
             }
-            if (query.hasOwnProperty('')) {
+            if (Object.prototype.hasOwnProperty.call(query, '')) {
                 delete query[''];
             }
             let u = `${this.url.replace(/^http/, 'ws').split('?')[0]}?sid=${this.sessionID}`;
@@ -173,7 +173,7 @@ class SocketClient {
             try {
                 data = JSON.parse(message.data);
             }
-            catch (e) {
+            catch {
                 console.error(`Received invalid message: ${JSON.stringify(message.data)}`);
                 return;
             }
@@ -274,7 +274,7 @@ class SocketClient {
             const callback = this.callbacks[i];
             if (callback?.id === id) {
                 const cb = callback.cb;
-                cb.apply(null, args);
+                cb.call(null, ...args);
                 this.callbacks[i] = null;
             }
         }
@@ -383,7 +383,7 @@ class SocketClient {
             try {
                 this.socket.close();
             }
-            catch (e) {
+            catch {
             }
             this.socket = null;
         }
