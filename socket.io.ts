@@ -140,7 +140,7 @@ export class SocketClient {
             this.connectTimer = null;
         }
 
-        this.url ||= url || globalThis.location?.href;
+        this.url ||= url || globalThis.location.href;
         this.options ||= JSON.parse(JSON.stringify(options || {}));
         if (!this.options) {
             throw new Error('No options provided!');
@@ -160,13 +160,13 @@ export class SocketClient {
         this.sessionID = Date.now();
         try {
             if (this.url === '/') {
-                const parts = globalThis.location?.pathname.split('/');
+                const parts = globalThis.location.pathname.split('/');
                 // remove filename
-                if (window.location.pathname.endsWith('.html') || window.location.pathname.endsWith('.htm')) {
+                if (globalThis.location.pathname.endsWith('.html') || globalThis.location.pathname.endsWith('.htm')) {
                     parts.pop();
                 }
 
-                this.url = `${globalThis.location?.protocol || 'http:'}//${globalThis.location?.host || 'localhost'}/${parts.join('/')}`;
+                this.url = `${globalThis.location.protocol || 'ws:'}//${globalThis.location.host || 'localhost'}/${parts.join('/')}`;
             }
 
             // extract all query attributes
