@@ -16,7 +16,7 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
-### **WORK IN PROGRESS**
+### 3.0.1 (2025-06-21)
 
 -   (@GermanBluefox) Allowed to use the code in node.js too
 

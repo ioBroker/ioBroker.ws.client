@@ -3,7 +3,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2025, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.0.0 (2025_06_21)
+ * v 3.0.1 (2025_06_21)
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SocketClient = void 0;
