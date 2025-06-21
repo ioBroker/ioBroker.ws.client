@@ -16,6 +16,10 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
+### **WORK IN PROGRESS**
+
+-   (@GermanBluefox) Allowed to use the code in node.js too
+
 ### 2.1.0 (2025-03-05)
 
 -   (@GermanBluefox) Fixed lint warnings
