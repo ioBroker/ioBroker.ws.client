@@ -19,6 +19,10 @@ export interface ConnectOptions {
     connectInterval?: number;
     /** Every connection attempt the interval increasing at options.connectInterval till max this number */
     connectMaxAttempt?: number;
+    /** Token for authentication */
+    token?: string;
+    /** WebSocket constructor, if you want to use a custom one */
+    WebSocket?: any;
 }
 export type SocketEventHandler = (...args: any[]) => void;
 export type SocketConnectionHandler = (connected: boolean) => void;
