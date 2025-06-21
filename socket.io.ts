@@ -17,7 +17,7 @@ if (typeof (globalThis as any).process !== 'undefined') {
     };
 }
 
-export interface ConnectOptions {
+interface ConnectOptions {
     /** Connection name, so the backend knows who wants to connect. Optional */
     name?: string;
     /** Timeout for answer for ping (pong) */
@@ -71,7 +71,7 @@ type SocketDisconnectionHandler = () => void;
 type SocketErrorHandler = (err: string) => void;
 
 // possible events: connect, disconnect, reconnect, error, connect_error
-export class SocketClient {
+class SocketClient {
     private readonly connectHandlers: SocketConnectionHandler[] = [];
     private readonly reconnectHandlers: SocketConnectionHandler[] = [];
     private readonly disconnectHandlers: SocketDisconnectionHandler[] = [];

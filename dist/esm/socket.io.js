@@ -5,8 +5,6 @@
  * Released under the MIT License.
  * v 3.0.2 (2025_06_21)
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SocketClient = void 0;
 if (typeof globalThis.process !== 'undefined') {
     globalThis.location ||= {
         href: 'http://localhost:8081/',
@@ -464,7 +462,6 @@ class SocketClient {
         }
     }
 }
-exports.SocketClient = SocketClient;
 function connect(url, options) {
     const socketClient = new SocketClient();
     socketClient.connect(url, options);
