@@ -1,6 +1,6 @@
 {
   "name": "@iobroker/ws",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "ioBroker client side of web sockets",
   "author": {
     "name": "bluefox",
