@@ -100,7 +100,7 @@ class SocketClient {
       clearInterval(this.connectTimer);
       this.connectTimer = null;
     }
-    this.url ||= url || globalThis.location?.href;
+    this.url ||= url || globalThis.location.href;
     this.options ||= JSON.parse(JSON.stringify(options || {}));
     if (!this.options) {
       throw new Error("No options provided!");
@@ -117,11 +117,11 @@ class SocketClient {
     this.sessionID = Date.now();
     try {
       if (this.url === "/") {
-        const parts = globalThis.location?.pathname.split("/");
-        if (window.location.pathname.endsWith(".html") || window.location.pathname.endsWith(".htm")) {
+        const parts = globalThis.location.pathname.split("/");
+        if (globalThis.location.pathname.endsWith(".html") || globalThis.location.pathname.endsWith(".htm")) {
           parts.pop();
         }
-        this.url = `${globalThis.location?.protocol || "http:"}//${globalThis.location?.host || "localhost"}/${parts.join("/")}`;
+        this.url = `${globalThis.location.protocol || "ws:"}//${globalThis.location.host || "localhost"}/${parts.join("/")}`;
       }
       const query = SocketClient.getQuery(this.url);
       if (query.sid) {
