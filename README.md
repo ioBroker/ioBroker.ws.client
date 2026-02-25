@@ -16,6 +16,10 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
+### **WORK IN PROGRESS**
+
+-   (@GermanBluefox) Updated packages
+
 ### 3.0.4 (2025-10-25)
 
 -   (@GermanBluefox) Updated packages
@@ -65,7 +69,7 @@ In the same way as `socket.io.client` library
 
 The MIT License (MIT)
 
-Copyright (c) 2020-2025 @GermanBluefox <dogafox@gmail.com>
+Copyright (c) 2020-2026 @GermanBluefox <dogafox@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

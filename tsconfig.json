@@ -22,7 +22,7 @@
         "inlineSources": true,
         "inlineSourceMap": false,
         "useUnknownInCatchVariables": false,
-        "outDir": "./dist/esm"
+        "outDir": "./build/esm"
     },
     "include": ["**/*.ts", "**/*.d.ts",],
     "exclude": ["node_modules/**"]

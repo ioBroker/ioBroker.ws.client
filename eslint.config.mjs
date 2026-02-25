@@ -20,6 +20,6 @@ export default [
         },
     },
     {
-        ignores: ['dist/**/*', 'test/**/*'],
+        ignores: ['build/**/*', 'test/**/*'],
     },
 ];

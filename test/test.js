@@ -4,8 +4,6 @@
 /* jshint expr: true */
 'use strict';
 
-const expect = require('chai').expect;
-
 describe('Implement tests', () => {
     it('Test', done => {
         // todo

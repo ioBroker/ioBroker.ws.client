@@ -1,7 +1,7 @@
 const { readFileSync, writeFileSync, existsSync, unlinkSync, copyFileSync } = require('node:fs');
 
 if (process.argv.includes('--post')) {
-    copyFileSync(`${__dirname}/types.d.ts`, `${__dirname}/dist/esm/types.d.ts`);
+    copyFileSync(`${__dirname}/types.d.ts`, `${__dirname}/build/esm/types.d.ts`);
 } else {
     const pkg = require('./package.json');
     const date = new Date();
@@ -18,7 +18,7 @@ if (process.argv.includes('--post')) {
         writeFileSync(`${__dirname}/socket.io.ts`, file);
     }
 
-    if (existsSync(`${__dirname}/dist/esm/index.d.ts`)) {
-        unlinkSync(`${__dirname}/dist/esm/index.d.ts`);
+    if (existsSync(`${__dirname}/build/esm/index.d.ts`)) {
+        unlinkSync(`${__dirname}/build/esm/index.d.ts`);
     }
 }

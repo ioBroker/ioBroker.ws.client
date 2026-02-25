@@ -1,9 +1,9 @@
 "use strict";
 /*!
  * ioBroker WebSockets
- * Copyright 2020-2025, bluefox <dogafox@gmail.com>
+ * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.0.4 (2025_10_25)
+ * v 3.0.4 (2026_02_25)
  */
 if (typeof globalThis.process !== 'undefined') {
     globalThis.location ||= {
