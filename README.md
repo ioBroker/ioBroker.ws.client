@@ -16,6 +16,9 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
+### **WORK IN PROGRESS**
+-   (@GermanBluefox) Fixed possible errors
+
 ### 3.0.5 (2026-02-25)
 
 -   (@GermanBluefox) Updated packages

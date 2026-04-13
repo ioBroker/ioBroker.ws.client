@@ -27,7 +27,7 @@
         "@alcalzone/release-script-plugin-license": "^5.1.1",
         "@iobroker/eslint-config": "^2.2.0",
         "mocha": "^11.7.5",
-        "terser": "^5.46.0",
+        "terser": "^5.46.1",
         "typescript": "~5.9.3"
     },
     "bugs": {
@@ -64,12 +64,13 @@
         "LICENSE"
     ],
     "scripts": {
-        "postbuild": "esm2cjs --in build/esm --out build/cjs -l error",
+        "build:cjs": "esm2cjs --in build/esm --out build/cjs -l error",
         "test": "npm run test:integration",
         "test:integration": "mocha --exit",
         "lint": "eslint -c eslint.config.mjs",
-        "build": "node tasks && tsc -p tsconfig.json && node tasks --post && npm run minify",
-        "minify": "terser build/esm/socket.io.js --compress ecma=2021,computed_props=false -o build/esm/socket.io.min.js --source-map \"content='build/esm/socket.io.js.map'\"",
+        "build": "node tasks && tsc -p tsconfig.json && node tasks --post && npm run build:cjs && npm run minify:esm && npm run minify:cjs",
+        "minify:esm": "terser build/esm/socket.io.js --compress ecma=2021,computed_props=false -o build/esm/socket.io.min.js --source-map \"content='build/esm/socket.io.js.map'\"",
+        "minify:cjs": "terser build/cjs/socket.io.js --compress ecma=2021,computed_props=false -o build/cjs/socket.io.min.js --source-map \"content='build/cjs/socket.io.js.map'\"",
         "release": "release-script",
         "release-patch": "release-script patch --yes",
         "release-minor": "release-script minor --yes",

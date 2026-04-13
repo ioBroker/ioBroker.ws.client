@@ -3,7 +3,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.0.5 (2026_02_25)
+ * v 3.0.5 (2026_04_13)
  */
 if (typeof globalThis.process !== 'undefined') {
     globalThis.location ||= {
@@ -21,7 +21,7 @@ const MESSAGE_TYPES = {
     PONG: 2,
     CALLBACK: 3,
 };
-const DEBUG = true;
+const DEBUG = false;
 const ERRORS = {
     1000: 'CLOSE_NORMAL',
     1001: 'CLOSE_GOING_AWAY',
@@ -78,7 +78,7 @@ class SocketClient {
         const result = {};
         for (let p = 0; p < parts.length; p++) {
             const parts1 = parts[p].split('=');
-            result[parts1[0]] = decodeURIComponent(parts[1]);
+            result[parts1[0]] = decodeURIComponent(parts1[1]);
         }
         return result;
     }
@@ -89,7 +89,7 @@ class SocketClient {
         }
         this.id = 0;
         if (this.connectTimer) {
-            clearInterval(this.connectTimer);
+            clearTimeout(this.connectTimer);
             this.connectTimer = null;
         }
         this.url ||= url || globalThis.location.href;
@@ -242,7 +242,12 @@ class SocketClient {
                 }
                 else if (type === MESSAGE_TYPES.PING) {
                     if (this.socket) {
-                        this.socket.send(JSON.stringify([MESSAGE_TYPES.PONG]));
+                        try {
+                            this.socket.send(JSON.stringify([MESSAGE_TYPES.PONG]));
+                        }
+                        catch {
+                            this.log.warn('Cannot send pong: connection closing');
+                        }
                     }
                     else {
                         this.log.warn('Cannot do pong: connection closed');
@@ -260,20 +265,18 @@ class SocketClient {
     _garbageCollect() {
         const now = Date.now();
         let empty = 0;
-        if (!DEBUG) {
-            for (let i = 0; i < this.callbacks.length; i++) {
-                const callback = this.callbacks[i];
-                if (callback) {
-                    if (callback.ts > now) {
-                        const cb = callback.cb;
-                        setTimeout(cb, 0, 'timeout');
-                        this.callbacks[i] = null;
-                        empty++;
-                    }
-                }
-                else {
+        for (let i = 0; i < this.callbacks.length; i++) {
+            const callback = this.callbacks[i];
+            if (callback) {
+                if (callback.ts && callback.ts < now) {
+                    const cb = callback.cb;
+                    setTimeout(cb, 0, 'timeout');
+                    this.callbacks[i] = null;
                     empty++;
                 }
+            }
+            else {
+                empty++;
             }
         }
         if (empty > this.callbacks.length / 2) {
@@ -286,6 +289,9 @@ class SocketClient {
     }
     withCallback(name, id, args, cb) {
         if (name === 'authenticate') {
+            if (this.authTimeout) {
+                clearTimeout(this.authTimeout);
+            }
             this.authTimeout = setTimeout(() => {
                 this.authTimeout = null;
                 if (this.connected) {
@@ -295,7 +301,7 @@ class SocketClient {
                 this.close();
             }, this.options?.authTimeout || 3000);
         }
-        this.callbacks.push({ id, cb, ts: DEBUG ? 0 : Date.now() + 30000 });
+        this.callbacks.push({ id, cb, ts: DEBUG ? 300_000 : Date.now() + 30_000 });
         this.socket?.send(JSON.stringify([MESSAGE_TYPES.CALLBACK, id, name, args]));
     }
     findAnswer(id, args) {
