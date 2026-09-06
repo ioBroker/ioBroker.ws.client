@@ -5,7 +5,7 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.1.0 (2026_09_06)
+ * v 3.1.1 (2026_09_06)
  */
 if (typeof globalThis.process !== "undefined") {
   globalThis.location ||= {

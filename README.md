@@ -16,7 +16,7 @@ In the same way as `socket.io.client` library
 -->
 
 ## Changelog
-### **WORK IN PROGRESS**
+### 3.1.1 (2026-09-06)
 -   (@joltcoke) Encoded the query values when the connection URL is assembled, so a value with `&`, `=`, `+`, `%` or a space reaches the server unchanged
 -   (@GermanBluefox) Encoded the query attribute names too, they were sent twice encoded
 -   (@GermanBluefox) Read `+` in the query as a space again, like the server does
