@@ -5,7 +5,7 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.1.0 (2026_04_13)
+ * v 3.1.0 (2026_09_04)
  */
 if (typeof globalThis.process !== "undefined") {
   globalThis.location ||= {
@@ -130,13 +130,13 @@ class SocketClient {
       }
       let u = `${this.url.replace(/^http/, "ws").split("?")[0]}?sid=${this.sessionID}`;
       if (Object.keys(query).length) {
-        u += `&${Object.keys(query).map((attr) => query[attr] === void 0 ? attr : `${attr}=${query[attr]}`).join("&")}`;
+        u += `&${Object.keys(query).map((attr) => query[attr] === void 0 ? encodeURIComponent(attr) : `${encodeURIComponent(attr)}=${encodeURIComponent(query[attr])}`).join("&")}`;
       }
       if (this.options?.name && !query.name) {
         u += `&name=${encodeURIComponent(this.options.name)}`;
       }
       if (this.options?.token) {
-        u += `&token=${this.options.token}`;
+        u += `&token=${encodeURIComponent(this.options.token)}`;
       }
       this.socket = new (this.options.WebSocket || globalThis.WebSocket)(u);
     } catch (error) {

@@ -2,7 +2,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.1.0 (2026_04_13)
+ * v 3.1.0 (2026_09_04)
  */
 
 if (typeof (globalThis as any).process !== 'undefined') {
@@ -181,10 +181,16 @@ class SocketClient {
 
             let u = `${this.url.replace(/^http/, 'ws').split('?')[0]}?sid=${this.sessionID}`;
 
-            // Apply a query to new url
+            // Apply a query to new url. getQuery() decoded the values, so they have to be
+            // encoded again here - the server decodes them with decodeURIComponent(), and without
+            // this a value containing & = + % or a space would not survive the round trip.
             if (Object.keys(query).length) {
                 u += `&${Object.keys(query)
-                    .map(attr => (query[attr] === undefined ? attr : `${attr}=${query[attr]}`))
+                    .map(attr =>
+                        query[attr] === undefined
+                            ? encodeURIComponent(attr)
+                            : `${encodeURIComponent(attr)}=${encodeURIComponent(query[attr])}`,
+                    )
                     .join('&')}`;
             }
 
@@ -192,7 +198,7 @@ class SocketClient {
                 u += `&name=${encodeURIComponent(this.options.name)}`;
             }
             if (this.options?.token) {
-                u += `&token=${this.options.token}`;
+                u += `&token=${encodeURIComponent(this.options.token)}`;
             }
             // "ws://www.example.com/socketserver"
             this.socket = new (this.options.WebSocket || globalThis.WebSocket)(u);
