@@ -28,7 +28,8 @@ jobs:
         with:
           node-version: '22.x'
           lint: true
-          test-command: 'false'
+          # Build first: the tests run against build/, so a stale build would hide a broken source
+          test-command: 'npm run build && npm test'
 
   # Deploys the final package to NPM
   deploy:

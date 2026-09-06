@@ -5,7 +5,7 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.1.0 (2026_09_04)
+ * v 3.1.0 (2026_09_06)
  */
 if (typeof globalThis.process !== "undefined") {
   globalThis.location ||= {
@@ -78,13 +78,24 @@ class SocketClient {
       error: /* @__PURE__ */ __name((text) => console.error(`[${(/* @__PURE__ */ new Date()).toISOString()}] ${text}`), "error")
     };
   }
+  static decodeQueryPart(part) {
+    try {
+      return decodeURIComponent(part.replace(/\+/g, " "));
+    } catch {
+      return part;
+    }
+  }
   static getQuery(_url) {
     const query = _url.split("?")[1] || "";
     const parts = query.split("&");
     const result = {};
     for (let p = 0; p < parts.length; p++) {
-      const parts1 = parts[p].split("=");
-      result[parts1[0]] = decodeURIComponent(parts1[1]);
+      const pos = parts[p].indexOf("=");
+      if (pos === -1) {
+        result[SocketClient.decodeQueryPart(parts[p])] = "true";
+      } else {
+        result[SocketClient.decodeQueryPart(parts[p].substring(0, pos))] = SocketClient.decodeQueryPart(parts[p].substring(pos + 1));
+      }
     }
     return result;
   }
@@ -122,17 +133,15 @@ class SocketClient {
         this.url = `${globalThis.location.protocol || "ws:"}//${globalThis.location.host || "localhost"}/${parts.join("/")}`;
       }
       const query = SocketClient.getQuery(this.url);
-      if (query.sid) {
-        delete query.sid;
-      }
+      delete query.sid;
       if (Object.prototype.hasOwnProperty.call(query, "")) {
         delete query[""];
       }
       let u = `${this.url.replace(/^http/, "ws").split("?")[0]}?sid=${this.sessionID}`;
       if (Object.keys(query).length) {
-        u += `&${Object.keys(query).map((attr) => query[attr] === void 0 ? encodeURIComponent(attr) : `${encodeURIComponent(attr)}=${encodeURIComponent(query[attr])}`).join("&")}`;
+        u += `&${Object.entries(query).map(([attr, value]) => `${encodeURIComponent(attr)}=${encodeURIComponent(value)}`).join("&")}`;
       }
-      if (this.options?.name && !query.name) {
+      if (this.options?.name && !Object.prototype.hasOwnProperty.call(query, "name")) {
         u += `&name=${encodeURIComponent(this.options.name)}`;
       }
       if (this.options?.token) {

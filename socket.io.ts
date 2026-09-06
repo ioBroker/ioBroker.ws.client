@@ -2,7 +2,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.1.0 (2026_09_04)
+ * v 3.1.0 (2026_09_06)
  */
 
 if (typeof (globalThis as any).process !== 'undefined') {
@@ -115,13 +115,37 @@ class SocketClient {
         };
     }
 
+    /**
+     * Decode one attribute name or value of a query string.
+     *
+     * The server parses the query with `querystring.parse()`, so the query is
+     * application/x-www-form-urlencoded and a `+` stands for a space here, too.
+     * A malformed percent sequence is kept as it is instead of throwing an URIError.
+     */
+    private static decodeQueryPart(part: string): string {
+        try {
+            return decodeURIComponent(part.replace(/\+/g, ' '));
+        } catch {
+            return part;
+        }
+    }
+
     private static getQuery(_url: string): Record<string, string> {
         const query = _url.split('?')[1] || '';
         const parts = query.split('&');
         const result: Record<string, string> = {};
         for (let p = 0; p < parts.length; p++) {
-            const parts1 = parts[p].split('=');
-            result[parts1[0]] = decodeURIComponent(parts1[1]);
+            // Only the first "=" separates the name from the value, the value may contain more of them
+            const pos = parts[p].indexOf('=');
+            if (pos === -1) {
+                // An attribute without "=" is a flag: "?a=b&c&d=6" means c is set, so it counts as true.
+                // An attribute with an empty value ("?c=") keeps the empty string.
+                result[SocketClient.decodeQueryPart(parts[p])] = 'true';
+            } else {
+                result[SocketClient.decodeQueryPart(parts[p].substring(0, pos))] = SocketClient.decodeQueryPart(
+                    parts[p].substring(pos + 1),
+                );
+            }
         }
         return result;
     }
@@ -171,9 +195,8 @@ class SocketClient {
 
             // extract all query attributes
             const query = SocketClient.getQuery(this.url);
-            if (query.sid) {
-                delete query.sid;
-            }
+            // The session id is generated here, a sid from the given url must never be reused
+            delete query.sid;
 
             if (Object.prototype.hasOwnProperty.call(query, '')) {
                 delete query[''];
@@ -181,20 +204,17 @@ class SocketClient {
 
             let u = `${this.url.replace(/^http/, 'ws').split('?')[0]}?sid=${this.sessionID}`;
 
-            // Apply a query to new url. getQuery() decoded the values, so they have to be
-            // encoded again here - the server decodes them with decodeURIComponent(), and without
-            // this a value containing & = + % or a space would not survive the round trip.
+            // Apply a query to new url. getQuery() decoded the names and the values, so they have
+            // to be encoded again here - without that a name or a value containing & = + % or a
+            // space would not survive the round trip to the server.
             if (Object.keys(query).length) {
-                u += `&${Object.keys(query)
-                    .map(attr =>
-                        query[attr] === undefined
-                            ? encodeURIComponent(attr)
-                            : `${encodeURIComponent(attr)}=${encodeURIComponent(query[attr])}`,
-                    )
+                u += `&${Object.entries(query)
+                    .map(([attr, value]) => `${encodeURIComponent(attr)}=${encodeURIComponent(value)}`)
                     .join('&')}`;
             }
 
-            if (this.options?.name && !query.name) {
+            // Only add the name if the url did not bring one, otherwise the server receives it twice
+            if (this.options?.name && !Object.prototype.hasOwnProperty.call(query, 'name')) {
                 u += `&name=${encodeURIComponent(this.options.name)}`;
             }
             if (this.options?.token) {
