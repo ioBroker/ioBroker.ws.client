@@ -26,14 +26,31 @@ jobs:
     steps:
       - uses: ioBroker/testing-action-check@v2.0.0
         with:
-          node-version: '22.x'
+          node-version: '24.x'
           lint: true
           # Build first: the tests run against build/, so a stale build would hide a broken source
           test-command: 'npm run build && npm test'
 
+  # Runs tests on all supported node versions and OSes
+  tests:
+    needs: [check-and-lint]
+
+    if: contains(github.event.head_commit.message, '[skip ci]') == false
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: ioBroker/testing-action-adapter@v1
+        with:
+          node-version: 24.x
+          os: ${{ matrix.os }}
+
   # Deploys the final package to NPM
   deploy:
-    needs: [check-and-lint]
+    needs: [check-and-lint, tests]
 
     # Permissions are required to create GitHub releases and npm trusted publishing
     permissions:
