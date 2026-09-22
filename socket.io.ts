@@ -2,7 +2,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.1.1 (2026_09_06)
+ * v 3.1.1 (2026_09_22)
  */
 
 if (typeof (globalThis as any).process !== 'undefined') {
@@ -13,6 +13,9 @@ if (typeof (globalThis as any).process !== 'undefined') {
         host: 'localhost:8081',
         pathname: '/',
         hostname: 'localhost',
+        port: '8081',
+        search: '',
+        hash: '',
         reload: () => {},
     };
 }
@@ -96,6 +99,8 @@ class SocketClient {
     private authTimeout: ReturnType<typeof setTimeout> | null = null;
 
     public connected = false;
+    /** close(true) or destroy() was called: no reconnect anymore */
+    public closing = false;
 
     private readonly log: {
         debug: (text: string) => void;
@@ -152,6 +157,8 @@ class SocketClient {
 
     connect(url?: string, options?: ConnectOptions): SocketClient {
         this.log.debug('Try to connect');
+        // A connect that the user asks for after close(true) or destroy() allows the reconnect again
+        this.closing = false;
 
         // remove hash
         if (url) {
@@ -190,7 +197,8 @@ class SocketClient {
                     parts.pop();
                 }
 
-                this.url = `${globalThis.location.protocol || 'ws:'}//${globalThis.location.host || 'localhost'}/${parts.join('/')}`;
+                // parts starts with "", so the joined path starts with "/"
+                this.url = `${globalThis.location.protocol || 'ws:'}//${globalThis.location.host || 'localhost'}${parts.join('/')}`;
             }
 
             // extract all query attributes
@@ -223,7 +231,8 @@ class SocketClient {
             // "ws://www.example.com/socketserver"
             this.socket = new (this.options.WebSocket || globalThis.WebSocket)(u);
         } catch (error) {
-            this.handlers.error?.forEach(cb => cb.call(this, error));
+            const message: string = error instanceof Error ? error.message : String(error);
+            this.errorHandlers.forEach(cb => cb.call(this, message));
             this.close();
             return this;
         }
@@ -234,8 +243,14 @@ class SocketClient {
             this.close(); // re-init connection, because no ___ready___ received in 2000 ms
         }, this.options.connectTimeout);
 
-        if (this.socket) {
-            this.socket.onopen = (): void /*event*/ => {
+        // The events of a socket that was closed and replaced by close() or a reconnect must not touch the
+        // current connection: its late "close" event would close the new socket
+        const socket = this.socket;
+        if (socket) {
+            socket.onopen = (): void /*event*/ => {
+                if (this.socket !== socket) {
+                    return;
+                }
                 this.lastPong = Date.now();
                 this.connectionCount = 0;
 
@@ -261,7 +276,10 @@ class SocketClient {
                 }, this.options?.pingInterval || 5000);
             };
 
-            this.socket.onclose = (event: CloseEvent): void => {
+            socket.onclose = (event: CloseEvent): void => {
+                if (this.socket !== socket) {
+                    return;
+                }
                 if (event.code === 3001) {
                     this.log.warn('ws closed');
                 } else {
@@ -271,7 +289,10 @@ class SocketClient {
             };
 
             // @ts-expect-error invalid typing
-            this.socket.onerror = (error: CloseEvent): void => {
+            socket.onerror = (error: CloseEvent): void => {
+                if (this.socket !== socket) {
+                    return;
+                }
                 if (this.connected && this.socket) {
                     if (this.socket.readyState === 1) {
                         this.log.error(`ws normal error: ${error.type}`);
@@ -281,7 +302,10 @@ class SocketClient {
                 this.close();
             };
 
-            this.socket.onmessage = (message: MessageEvent<string>): void => {
+            socket.onmessage = (message: MessageEvent<string>): void => {
+                if (this.socket !== socket) {
+                    return;
+                }
                 this.lastPong = Date.now();
                 if (!message?.data || typeof message.data !== 'string') {
                     console.error(`Received invalid message: ${JSON.stringify(message)}`);
@@ -291,6 +315,10 @@ class SocketClient {
                 try {
                     data = JSON.parse(message.data);
                 } catch {
+                    console.error(`Received invalid message: ${JSON.stringify(message.data)}`);
+                    return;
+                }
+                if (!Array.isArray(data)) {
                     console.error(`Received invalid message: ${JSON.stringify(message.data)}`);
                     return;
                 }
@@ -391,7 +419,7 @@ class SocketClient {
                 this.authTimeout = null;
                 if (this.connected) {
                     this.log.debug('Authenticate timeout');
-                    this.handlers.error?.forEach(cb => cb.call(this, 'Authenticate timeout'));
+                    this.errorHandlers.forEach(cb => cb.call(this, 'Authenticate timeout'));
                 }
                 this.close();
             }, this.options?.authTimeout || 3000);
@@ -406,7 +434,8 @@ class SocketClient {
             const callback = this.callbacks[i];
             if (callback?.id === id) {
                 const cb = callback.cb;
-                cb.call(null, ...args);
+                // The server sends no arguments if its callback was called without any, e.g. for "logout"
+                cb.call(null, ...(Array.isArray(args) ? args : []));
                 this.callbacks[i] = null;
             }
         }
@@ -515,7 +544,15 @@ class SocketClient {
         }
     }
 
-    close(): SocketClient {
+    close(noReconnect: boolean = false): SocketClient {
+        if (this.closing && noReconnect) {
+            return this;
+        }
+
+        if (noReconnect) {
+            this.closing = true;
+        }
+
         if (this.pingInterval) {
             clearInterval(this.pingInterval);
             this.pingInterval = null;
@@ -529,6 +566,11 @@ class SocketClient {
         if (this.connectingTimer) {
             clearTimeout(this.connectingTimer);
             this.connectingTimer = null;
+        }
+
+        if (this.connectTimer) {
+            clearTimeout(this.connectTimer);
+            this.connectTimer = null;
         }
 
         if (this.socket) {
@@ -547,7 +589,9 @@ class SocketClient {
 
         this.callbacks = [];
 
-        this._reconnect();
+        if (!noReconnect && !this.closing) {
+            this._reconnect();
+        }
 
         return this;
     }
@@ -556,11 +600,8 @@ class SocketClient {
     disconnect = this.close;
 
     destroy(): void {
-        this.close();
-        if (this.connectTimer) {
-            clearTimeout(this.connectTimer);
-            this.connectTimer = null;
-        }
+        // close(true) stops the reconnect and clears the timer of a reconnect that was already scheduled
+        this.close(true);
     }
 
     private _reconnect(): void {

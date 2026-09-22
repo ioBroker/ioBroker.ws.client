@@ -31,7 +31,8 @@
     "@iobroker/eslint-config": "^2.3.4",
     "mocha": "^12.0.0",
     "terser": "^5.51.2",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "ws": "^8.21.3"
   },
   "bugs": {
     "url": "https://github.com/ioBroker/ioBroker.web/issues"
@@ -68,8 +69,9 @@
   ],
   "scripts": {
     "build:cjs": "esm2cjs --in build/esm --out build/cjs -l error",
-    "test": "npm run test:integration",
+    "test": "npm run test:integration && npm run test:unit",
     "test:integration": "mocha --exit",
+    "test:unit": "node --test \"test/unit/**/*.test.js\"",
     "lint": "eslint -c eslint.config.mjs",
     "build": "node tasks && tsc -p tsconfig.json && node tasks --post && npm run build:cjs && npm run minify:esm && npm run minify:cjs",
     "minify:esm": "terser build/esm/socket.io.js --compress ecma=2021,computed_props=false -o build/esm/socket.io.min.js --source-map \"content='build/esm/socket.io.js.map'\"",
