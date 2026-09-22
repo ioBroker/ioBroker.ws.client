@@ -14,6 +14,8 @@ In the same way as `socket.io.client` library
 	Placeholder for the next version (at the beginning of the line):
 	### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+-   (@GermanBluefox) Called the callbacks that still wait for an answer with `'disconnected'` when the connection is closed, before they were never called
 
 ## Changelog
 ### 3.1.1 (2026-09-06)

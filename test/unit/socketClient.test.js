@@ -888,7 +888,10 @@ describe('ws client', () => {
             await until(() => connection.isClosed, 'the close after the authenticate timeout');
             assert.ok(handlers.disconnect.mock.callCount() >= 1);
             await until(() => handlers.reconnect.mock.callCount() >= 1, 'the reconnect');
-            assert.equal(callback.mock.callCount(), 0);
+            assert.deepEqual(
+                callback.mock.calls.map(call => call.arguments),
+                [['disconnected']],
+            );
         });
 
         it('reports the authenticate timeout to the error handlers', async () => {
@@ -934,6 +937,126 @@ describe('ws client', () => {
             assert.deepEqual(callback.mock.calls[0].arguments, [true, false]);
             assert.equal(handlers.disconnect.mock.callCount(), 0);
             assert.equal(connection.isOpen, true);
+        });
+    });
+
+    describe('callbacks of a closed connection', () => {
+        it('calls the waiting callbacks with "disconnected" when the connection is lost', async () => {
+            const { client, connection, handlers } = await connectedClient();
+            const first = mock.fn();
+            const second = mock.fn();
+            client.emit('getState', 'id', first);
+            client.emit('getStates', '*', second);
+            await until(() => connection.messages.length === 2, 'the requests');
+
+            connection.ws.close();
+            await until(() => second.mock.callCount() === 1, 'the callbacks');
+
+            for (const callback of [first, second]) {
+                assert.deepEqual(
+                    callback.mock.calls.map(call => call.arguments),
+                    [['disconnected']],
+                );
+            }
+            // the callbacks are called after the disconnect handlers
+            assert.equal(handlers.disconnect.mock.callCount(), 1);
+        });
+
+        it('does not call the callback again when the new connection answers the same id', async () => {
+            const { client, connection, handlers } = await connectedClient();
+            const lost = mock.fn();
+            client.emit('getState', 'id', lost);
+            await connection.message(message => message[2] === 'getState', 'the request');
+
+            connection.ws.close();
+            const second = await server.connection(2);
+            await until(() => handlers.reconnect.mock.callCount() === 1, 'the reconnect');
+            const current = mock.fn();
+            // the ids start at 1 again on the new connection
+            client.emit('getState', 'id', current);
+            await second.message(message => message[2] === 'getState', 'the second request');
+            second.send([CALLBACK, 1, 'getState', [null, { val: 1 }]]);
+            await until(() => current.mock.callCount() === 1, 'the answer');
+
+            assert.deepEqual(
+                lost.mock.calls.map(call => call.arguments),
+                [['disconnected']],
+            );
+            assert.deepEqual(current.mock.calls[0].arguments, [null, { val: 1 }]);
+        });
+
+        it('calls the waiting callbacks with "disconnected" on close(true) and destroy()', async () => {
+            const { client: closed, connection: first } = await connectedClient();
+            const closedCallback = mock.fn();
+            closed.emit('getState', 'id', closedCallback);
+            await first.message(message => message[2] === 'getState', 'the first request');
+
+            const destroyed = globalThis.io.connect(server.url, { WebSocket });
+            clients.push(destroyed);
+            const second = await server.connection(2);
+            await until(() => destroyed.connected, 'the second ready message');
+            const destroyedCallback = mock.fn();
+            destroyed.emit('getState', 'id', destroyedCallback);
+            await second.message(message => message[2] === 'getState', 'the second request');
+
+            closed.close(true);
+            destroyed.destroy();
+
+            await until(
+                () => closedCallback.mock.callCount() === 1 && destroyedCallback.mock.callCount() === 1,
+                'the callbacks',
+            );
+            assert.deepEqual(closedCallback.mock.calls[0].arguments, ['disconnected']);
+            assert.deepEqual(destroyedCallback.mock.calls[0].arguments, ['disconnected']);
+        });
+
+        it('calls the callbacks asynchronously, after close() returned', async () => {
+            const { client, connection } = await connectedClient();
+            const callback = mock.fn();
+            client.emit('getState', 'id', callback);
+            await connection.message(message => message[2] === 'getState', 'the request');
+
+            client.close(true);
+
+            assert.equal(callback.mock.callCount(), 0);
+            await until(() => callback.mock.callCount() === 1, 'the callback');
+        });
+
+        it('does not call an answered callback again when the connection is closed', async () => {
+            const { client, connection } = await connectedClient();
+            const callback = mock.fn();
+            client.emit('getState', 'id', callback);
+            await connection.message(message => message[2] === 'getState', 'the request');
+            connection.send([CALLBACK, 1, 'getState', [null, { val: true }]]);
+            await until(() => callback.mock.callCount() === 1, 'the answer');
+
+            client.close(true);
+            await delay(20);
+
+            assert.deepEqual(
+                callback.mock.calls.map(call => call.arguments),
+                [[null, { val: true }]],
+            );
+        });
+
+        it('lets a callback emit again when it is called with "disconnected"', async () => {
+            const { client, connection, handlers } = await connectedClient();
+            client.emit('getState', 'id', error => {
+                if (error === 'disconnected') {
+                    client.emit('retry', 1);
+                }
+            });
+            await connection.message(message => message[2] === 'getState', 'the request');
+            server.sendReady = false;
+
+            connection.ws.close();
+            const second = await server.connection(2);
+            second.ready();
+            await until(() => handlers.reconnect.mock.callCount() === 1, 'the reconnect');
+
+            // the emit of the callback came before the ready message and was dropped as the client warns
+            assert.equal(logged(consoleWarn, 'Not connected'), 1);
+            assert.equal(client.connected, true);
         });
     });
 

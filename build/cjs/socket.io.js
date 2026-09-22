@@ -455,6 +455,7 @@ class SocketClient {
       this.disconnectHandlers.forEach((cb) => cb.call(this));
       this.connected = false;
     }
+    this.callbacks.forEach((callback) => callback && setTimeout(callback.cb, 0, "disconnected"));
     this.callbacks = [];
     if (!noReconnect && !this.closing) {
       this._reconnect();

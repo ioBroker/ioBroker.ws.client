@@ -587,6 +587,9 @@ class SocketClient {
             this.connected = false;
         }
 
+        // The answers of the closed connection never arrive, so the callbacks must not wait for them forever.
+        // They are called asynchronously like the timeout, so a callback that emits again does not run inside close()
+        this.callbacks.forEach(callback => callback && setTimeout(callback.cb, 0, 'disconnected'));
         this.callbacks = [];
 
         if (!noReconnect && !this.closing) {
