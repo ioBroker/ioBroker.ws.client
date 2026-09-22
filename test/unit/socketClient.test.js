@@ -427,6 +427,54 @@ describe('ws client', () => {
             assert.deepEqual(handler.mock.calls[0].arguments, []);
         });
 
+        it('calls the event handlers with the client as this and the callbacks without it', async () => {
+            const { client, connection } = await connectedClient();
+            const handler = mock.fn();
+            const callback = mock.fn();
+            client.on('event', handler);
+            client.emit('request', callback);
+            await connection.message(message => message[2] === 'request', 'the request');
+
+            connection.send([MESSAGE, 5, 'event', [1]]);
+            connection.send([CALLBACK, 1, 'request', [null]]);
+            await processed(client, connection);
+
+            assert.equal(handler.mock.calls[0].this, client);
+            assert.equal(callback.mock.calls[0].this, null);
+        });
+
+        it('does not call error and reconnect handlers removed by off()', async () => {
+            const { client, connection, handlers } = await connectedClient({ authTimeout: 50 });
+            client.off('error', handlers.error);
+            client.off('reconnect', handlers.reconnect);
+            const disconnected = mock.fn();
+            client.on('disconnect', disconnected);
+
+            client.emit('authenticate', () => {});
+            await connection.message(message => message[2] === 'authenticate', 'the request');
+            // no answer: the authenticate timeout reports an error and reconnects
+            await until(() => disconnected.mock.callCount() === 1, 'the authenticate timeout');
+            await until(() => client.connected, 'the reconnect');
+
+            assert.equal(handlers.error.mock.callCount(), 0);
+            assert.equal(handlers.reconnect.mock.callCount(), 0);
+        });
+
+        it('ignores on() without a handler and off() of an unknown handler', async () => {
+            const { client, connection } = await connectedClient();
+            const handler = mock.fn();
+            client.on('event', undefined);
+            client.on('event', handler);
+
+            client.off('event', () => {});
+            client.off('unknown', handler);
+            client.off('error', () => {});
+            connection.send([MESSAGE, 5, 'event', ['ok']]);
+
+            await until(() => handler.mock.callCount() === 1, 'the event');
+            assert.deepEqual(handler.mock.calls[0].arguments, ['ok']);
+        });
+
         it('does not call an event handler removed by off()', async () => {
             const { client, connection } = await connectedClient();
             const removed = mock.fn();
@@ -602,6 +650,102 @@ describe('ws client', () => {
             assert.equal(client.closing, false);
         });
 
+        it('increases the interval between the attempts up to connectMaxAttempt times connectInterval', () => {
+            mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
+            const attempts = [];
+            function ThrowingWebSocket() {
+                attempts.push(Date.now());
+                throw new Error('no connection');
+            }
+            connectClient({ WebSocket: ThrowingWebSocket, connectInterval: 100, connectMaxAttempt: 3 });
+
+            // the mocked Date jumps to the end of a tick, so every step ends where an attempt is due
+            mock.timers.tick(0);
+            for (let i = 0; i < 20; i++) {
+                mock.timers.tick(50);
+            }
+
+            // the first reconnect follows at once, then the interval grows by connectInterval up to 3 * 100 ms
+            assert.deepEqual(attempts, [0, 0, 100, 300, 600, 900]);
+        });
+
+        it('keeps the queued emits until the first ready message, also over a reconnect', async () => {
+            server.sendReady = false;
+            const { client } = connectClient({ connectTimeout: 100 });
+            client.emit('queued', 1);
+            const first = await server.connection(1);
+
+            await until(() => first.isClosed, 'the close after the connect timeout');
+            const second = await server.connection(2);
+            second.ready();
+
+            await second.message(message => message[2] === 'queued', 'the queued emit');
+            assert.deepEqual(first.messages, []);
+            assert.deepEqual(second.messages, [[MESSAGE, 1, 'queued', [1]]]);
+        });
+
+        it('reports an error of the socket while connected and reconnects', async () => {
+            const { handlers } = await connectedClient({ WebSocket: RecordingWebSocket });
+
+            RecordingWebSocket.sockets[0].emit('error', new Error('broken'));
+
+            assert.deepEqual(errors(handlers), ['UNKNOWN']);
+            assert.equal(handlers.disconnect.mock.callCount(), 1);
+            await until(() => handlers.reconnect.mock.callCount() === 1, 'the reconnect');
+        });
+
+        it('does not report an error of the socket before the ready message, but tries again', async () => {
+            server.sendReady = false;
+            const { handlers } = connectClient({ WebSocket: RecordingWebSocket });
+            await server.connection(1);
+            server.sendReady = true;
+
+            RecordingWebSocket.sockets[0].emit('error', new Error('broken'));
+
+            await until(() => handlers.connect.mock.callCount() === 1, 'the next connection');
+            assert.deepEqual(errors(handlers), []);
+            assert.equal(server.connections.length, 2);
+        });
+
+        it('logs a close with code 3001 as warning and other codes as error', async () => {
+            const { connection, handlers } = await connectedClient();
+
+            connection.ws.close(3001);
+            const second = await server.connection(2);
+            await until(() => handlers.reconnect.mock.callCount() === 1, 'the first reconnect');
+            second.ws.close(1011);
+            await until(() => handlers.reconnect.mock.callCount() === 2, 'the second reconnect');
+
+            assert.equal(logged(consoleWarn, 'ws closed'), 1);
+            assert.equal(logged(consoleError, 'ws connection error: Server error'), 1);
+        });
+
+        it('closes the connection and reconnects when a message cannot be sent', async () => {
+            const { client, handlers } = await connectedClient({ WebSocket: RecordingWebSocket });
+            RecordingWebSocket.sockets[0].send = () => {
+                throw new Error('send failed');
+            };
+
+            client.emit('lost', 1);
+
+            assert.equal(logged(consoleError, 'Cannot send: Error: send failed'), 1);
+            assert.equal(client.connected, false);
+            assert.equal(handlers.disconnect.mock.callCount(), 1);
+            await until(() => handlers.reconnect.mock.callCount() === 1, 'the reconnect');
+            assert.equal(server.connections.length, 2);
+        });
+
+        it('reconnects after disconnect(), the alias of close()', async () => {
+            const { client, connection, handlers } = await connectedClient();
+
+            client.disconnect();
+
+            assert.equal(client.connected, false);
+            assert.equal(client.closing, false);
+            await until(() => connection.isClosed, 'the close');
+            await until(() => handlers.reconnect.mock.callCount() === 1, 'the reconnect');
+        });
+
         it('reports the error of a failing WebSocket constructor to the error handlers', async () => {
             // The error of the first attempt is reported before the handlers exist, the next attempt follows at once
             const { handlers } = connectClient({ WebSocket: RecordingWebSocket }, 'ftp://127.0.0.1/');
@@ -670,6 +814,48 @@ describe('ws client', () => {
             assert.equal(server.connections.length, 1);
             assert.equal(RecordingWebSocket.urls.length, 1);
             assert.equal(client.closing, true);
+        });
+
+        it('calls the disconnect handlers only once when destroy() and close(true) are called again', async () => {
+            const { client, handlers } = await connectedClient();
+
+            client.destroy();
+            client.destroy();
+            client.close(true);
+
+            assert.equal(handlers.disconnect.mock.callCount(), 1);
+            assert.equal(client.closing, true);
+        });
+
+        it('does not call the disconnect handlers when destroy() is called before the ready message', async () => {
+            server.sendReady = false;
+            const { client, handlers } = connectClient({ connectTimeout: 50 });
+            const connection = await server.connection(1);
+
+            client.destroy();
+            await until(() => connection.isClosed, 'the close');
+            // longer than connectTimeout: its timer must be cleared
+            await delay(150);
+
+            assert.equal(handlers.disconnect.mock.callCount(), 0);
+            assert.equal(server.connections.length, 1);
+            assert.equal(logged(consoleWarn, 'No READY flag'), 0);
+        });
+
+        it('cancels a scheduled reconnect on destroy()', () => {
+            mock.timers.enable({ apis: ['setTimeout'] });
+            let attempts = 0;
+            function ThrowingWebSocket() {
+                attempts++;
+                throw new Error('no connection');
+            }
+            const { client } = connectClient({ WebSocket: ThrowingWebSocket });
+
+            // the failed attempt scheduled the next one
+            client.destroy();
+            mock.timers.tick(10_000);
+
+            assert.equal(attempts, 1);
         });
 
         it('does not reconnect when the close event of the socket arrives after close(true)', async () => {

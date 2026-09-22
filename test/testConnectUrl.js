@@ -58,6 +58,24 @@ describe('connect url - base url', () => {
         assert.match(url, /^wss:\/\/example\.com\//, url);
         assert.ok(!url.includes('index.html'), url);
     });
+
+    it('removes a file name ending with .htm, too', () => {
+        const url = connectUrl('/', {}, { protocol: 'http:', host: 'example.com', pathname: '/vis/edit.htm' });
+
+        assert.strictEqual(url.split('?')[0], 'ws://example.com/vis');
+    });
+
+    it('keeps the path of the location when it has no file name', () => {
+        const url = connectUrl('/', {}, { protocol: 'http:', host: 'example.com:8082', pathname: '/vis/' });
+
+        assert.strictEqual(url.split('?')[0], 'ws://example.com:8082/vis/');
+    });
+
+    it('falls back to ws: and localhost when the location has no protocol and no host', () => {
+        const url = connectUrl('/', {}, { protocol: '', host: '', pathname: '/' });
+
+        assert.strictEqual(url.split('?')[0], 'ws://localhost/');
+    });
 });
 
 describe('connect url - session id', () => {
@@ -128,6 +146,22 @@ describe('connect url - query round trip', () => {
             const query = serverQuery(url);
             assert.strictEqual(query.user, 'a b', url);
             assert.strictEqual(query.pass, 'p&q', url);
+        }
+    });
+
+    it('keeps the name and the token when the same client reconnects', () => {
+        const { io, urls } = loadClient();
+        const client = io.connect('ws://localhost/?user=admin', { name: 'my client', token: 'a b' });
+
+        client.close();
+        client.connect();
+        client.destroy();
+
+        assert.ok(urls.length > 1, 'the client did not reconnect');
+        for (const url of urls) {
+            const query = serverQuery(url);
+            delete query.sid;
+            assert.deepStrictEqual(query, { user: 'admin', name: 'my client', token: 'a b' }, url);
         }
     });
 
