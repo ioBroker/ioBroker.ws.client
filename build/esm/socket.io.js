@@ -3,7 +3,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.1.1 (2026_09_06)
+ * v 3.1.1 (2026_09_22)
  */
 if (typeof globalThis.process !== 'undefined') {
     globalThis.location ||= {
@@ -12,6 +12,9 @@ if (typeof globalThis.process !== 'undefined') {
         host: 'localhost:8081',
         pathname: '/',
         hostname: 'localhost',
+        port: '8081',
+        search: '',
+        hash: '',
         reload: () => { },
     };
 }
@@ -60,6 +63,7 @@ class SocketClient {
     sessionID = 0;
     authTimeout = null;
     connected = false;
+    closing = false;
     log;
     constructor() {
         this.log = {
@@ -97,6 +101,7 @@ class SocketClient {
     }
     connect(url, options) {
         this.log.debug('Try to connect');
+        this.closing = false;
         if (url) {
             url = url.split('#')[0];
         }
@@ -126,7 +131,7 @@ class SocketClient {
                 if (globalThis.location.pathname.endsWith('.html') || globalThis.location.pathname.endsWith('.htm')) {
                     parts.pop();
                 }
-                this.url = `${globalThis.location.protocol || 'ws:'}//${globalThis.location.host || 'localhost'}/${parts.join('/')}`;
+                this.url = `${globalThis.location.protocol || 'ws:'}//${globalThis.location.host || 'localhost'}${parts.join('/')}`;
             }
             const query = SocketClient.getQuery(this.url);
             delete query.sid;
@@ -148,7 +153,8 @@ class SocketClient {
             this.socket = new (this.options.WebSocket || globalThis.WebSocket)(u);
         }
         catch (error) {
-            this.handlers.error?.forEach(cb => cb.call(this, error));
+            const message = error instanceof Error ? error.message : String(error);
+            this.errorHandlers.forEach(cb => cb.call(this, message));
             this.close();
             return this;
         }
@@ -157,8 +163,12 @@ class SocketClient {
             this.log.warn('No READY flag received in 3 seconds. Re-init');
             this.close();
         }, this.options.connectTimeout);
-        if (this.socket) {
-            this.socket.onopen = () => {
+        const socket = this.socket;
+        if (socket) {
+            socket.onopen = () => {
+                if (this.socket !== socket) {
+                    return;
+                }
                 this.lastPong = Date.now();
                 this.connectionCount = 0;
                 this.pingInterval = setInterval(() => {
@@ -182,7 +192,10 @@ class SocketClient {
                     this._garbageCollect();
                 }, this.options?.pingInterval || 5000);
             };
-            this.socket.onclose = (event) => {
+            socket.onclose = (event) => {
+                if (this.socket !== socket) {
+                    return;
+                }
                 if (event.code === 3001) {
                     this.log.warn('ws closed');
                 }
@@ -191,7 +204,10 @@ class SocketClient {
                 }
                 this.close();
             };
-            this.socket.onerror = (error) => {
+            socket.onerror = (error) => {
+                if (this.socket !== socket) {
+                    return;
+                }
                 if (this.connected && this.socket) {
                     if (this.socket.readyState === 1) {
                         this.log.error(`ws normal error: ${error.type}`);
@@ -200,7 +216,10 @@ class SocketClient {
                 }
                 this.close();
             };
-            this.socket.onmessage = (message) => {
+            socket.onmessage = (message) => {
+                if (this.socket !== socket) {
+                    return;
+                }
                 this.lastPong = Date.now();
                 if (!message?.data || typeof message.data !== 'string') {
                     console.error(`Received invalid message: ${JSON.stringify(message)}`);
@@ -211,6 +230,10 @@ class SocketClient {
                     data = JSON.parse(message.data);
                 }
                 catch {
+                    console.error(`Received invalid message: ${JSON.stringify(message.data)}`);
+                    return;
+                }
+                if (!Array.isArray(data)) {
                     console.error(`Received invalid message: ${JSON.stringify(message.data)}`);
                     return;
                 }
@@ -307,7 +330,7 @@ class SocketClient {
                 this.authTimeout = null;
                 if (this.connected) {
                     this.log.debug('Authenticate timeout');
-                    this.handlers.error?.forEach(cb => cb.call(this, 'Authenticate timeout'));
+                    this.errorHandlers.forEach(cb => cb.call(this, 'Authenticate timeout'));
                 }
                 this.close();
             }, this.options?.authTimeout || 3000);
@@ -320,7 +343,7 @@ class SocketClient {
             const callback = this.callbacks[i];
             if (callback?.id === id) {
                 const cb = callback.cb;
-                cb.call(null, ...args);
+                cb.call(null, ...(Array.isArray(args) ? args : []));
                 this.callbacks[i] = null;
             }
         }
@@ -423,7 +446,13 @@ class SocketClient {
             }
         }
     }
-    close() {
+    close(noReconnect = false) {
+        if (this.closing && noReconnect) {
+            return this;
+        }
+        if (noReconnect) {
+            this.closing = true;
+        }
         if (this.pingInterval) {
             clearInterval(this.pingInterval);
             this.pingInterval = null;
@@ -435,6 +464,10 @@ class SocketClient {
         if (this.connectingTimer) {
             clearTimeout(this.connectingTimer);
             this.connectingTimer = null;
+        }
+        if (this.connectTimer) {
+            clearTimeout(this.connectTimer);
+            this.connectTimer = null;
         }
         if (this.socket) {
             try {
@@ -449,16 +482,14 @@ class SocketClient {
             this.connected = false;
         }
         this.callbacks = [];
-        this._reconnect();
+        if (!noReconnect && !this.closing) {
+            this._reconnect();
+        }
         return this;
     }
     disconnect = this.close;
     destroy() {
-        this.close();
-        if (this.connectTimer) {
-            clearTimeout(this.connectTimer);
-            this.connectTimer = null;
-        }
+        this.close(true);
     }
     _reconnect() {
         if (!this.connectTimer) {
