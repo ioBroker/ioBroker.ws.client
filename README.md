@@ -14,10 +14,9 @@ In the same way as `socket.io.client` library
 	Placeholder for the next version (at the beginning of the line):
 	### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 3.1.2 (2026-09-22)
 -   (@GermanBluefox) Called the callbacks that still wait for an answer with `'disconnected'` when the connection is closed, before they were never called
 
-## Changelog
 ### 3.1.1 (2026-09-06)
 -   (@joltcoke) Encoded the query values when the connection URL is assembled, so a value with `&`, `=`, `+`, `%` or a space reaches the server unchanged
 -   (@GermanBluefox) Encoded the query attribute names too, they were sent twice encoded
