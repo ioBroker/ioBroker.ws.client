@@ -15,6 +15,15 @@ export interface ConnectOptions {
     connectTimeout?: number;
     /** Authentication timeout */
     authTimeout?: number;
+    /**
+     * How long an emit with a callback waits for its answer, in milliseconds. Default 30000.
+     *
+     * After this the callback is called with the string `'timeout'` and a late answer is dropped.
+     * Raise it for commands that are allowed to take their time - `sendTo` to an adapter that
+     * queries a slow remote service, for instance - and keep in mind that it applies to every
+     * callback of this connection.
+     */
+    callbackTimeout?: number;
     /** Interval between connection attempts */
     connectInterval?: number;
     /** Every connection attempt the interval increasing at options.connectInterval till max this number */

@@ -1101,6 +1101,52 @@ describe('ws client', () => {
             );
             assert.equal(connection.isOpen, true);
         });
+
+        it('waits as long as callbackTimeout says instead of the default 30 seconds', async () => {
+            // pongTimeout too, otherwise ticking past 60 seconds closes the connection and the
+            // callback is answered with 'disconnected' before its own budget is up
+            const { client, connection } = await connectedClient({
+                callbackTimeout: 120_000,
+                pongTimeout: 600_000,
+            });
+            const callback = mock.fn();
+            client.emit('sendTo', 'javascript.0', callback);
+            await connection.message(message => message[2] === 'sendTo', 'the request');
+
+            // way past the default, but well inside the configured budget
+            mock.timers.tick(90_000);
+            await processed(client, connection);
+            assert.equal(callback.mock.callCount(), 0, 'the callback must still be waiting');
+
+            connection.send([CALLBACK, 1, 'sendTo', [{ result: 'late but welcome' }]]);
+            await until(() => callback.mock.callCount() === 1, 'the late answer');
+            assert.deepEqual(callback.mock.calls[0].arguments, [{ result: 'late but welcome' }]);
+        });
+
+        it('still gives up once the configured budget is used up', async () => {
+            const { client, connection } = await connectedClient({
+                callbackTimeout: 120_000,
+                pongTimeout: 600_000,
+            });
+            const callback = mock.fn();
+            client.emit('sendTo', 'javascript.0', callback);
+            await connection.message(message => message[2] === 'sendTo', 'the request');
+
+            mock.timers.tick(125_000);
+            await until(() => callback.mock.callCount() > 0, 'the timeout of the callback');
+            assert.deepEqual(callback.mock.calls[0].arguments, ['timeout']);
+        });
+
+        it('can be set shorter than the default', async () => {
+            const { client, connection } = await connectedClient({ callbackTimeout: 5_000 });
+            const callback = mock.fn();
+            client.emit('getStates', '*', callback);
+            await connection.message(message => message[2] === 'getStates', 'the request');
+
+            mock.timers.tick(7_000);
+            await until(() => callback.mock.callCount() > 0, 'the timeout of the callback');
+            assert.deepEqual(callback.mock.calls[0].arguments, ['timeout']);
+        });
     });
 
     describe('in Node.js', () => {

@@ -14,6 +14,10 @@ In the same way as `socket.io.client` library
 	Placeholder for the next version (at the beginning of the line):
 	### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+-   (@GermanBluefox) Added the connect option `callbackTimeout`: how long an emit with a callback waits for its answer, 30000 ms as before if not given. A command that is allowed to take longer - `sendTo` to an adapter that queries a slow remote service - no longer gets `'timeout'` while the answer is still on its way
+-   (@GermanBluefox) Fixed the lifetime of a callback while `DEBUG` is on: it was an absolute point in time in 1970, so every callback expired at the next garbage collection instead of getting the intended five minutes
+
 ### 3.1.2 (2026-09-22)
 -   (@GermanBluefox) Called the callbacks that still wait for an answer with `'disconnected'` when the connection is closed, before they were never called
 

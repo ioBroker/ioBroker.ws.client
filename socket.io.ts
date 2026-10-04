@@ -2,7 +2,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.1.2 (2026_09_22)
+ * v 3.1.2 (2026_10_04)
  */
 
 if (typeof (globalThis as any).process !== 'undefined') {
@@ -31,6 +31,15 @@ interface ConnectOptions {
     connectTimeout?: number;
     /** Authentication timeout */
     authTimeout?: number;
+    /**
+     * How long an emit with a callback waits for its answer, in milliseconds. Default 30000.
+     *
+     * After this the callback is called with the string `'timeout'` and a late answer is dropped.
+     * Raise it for commands that are allowed to take their time - `sendTo` to an adapter that
+     * queries a slow remote service, for instance - and keep in mind that it applies to every
+     * callback of this connection.
+     */
+    callbackTimeout?: number;
     /** Interval between connection attempts */
     connectInterval?: number;
     /** Every connection attempt the interval increasing at options.connectInterval till max this number */
@@ -185,6 +194,7 @@ class SocketClient {
         this.options.pingInterval = parseInt(this.options.pingInterval as unknown as string, 10) || 5000; // Ping interval
         this.options.connectTimeout = parseInt(this.options.connectTimeout as unknown as string, 10) || 3000; // connection request timeout
         this.options.authTimeout = parseInt(this.options.authTimeout as unknown as string, 10) || 3000; // Authentication timeout
+        this.options.callbackTimeout = parseInt(this.options.callbackTimeout as unknown as string, 10) || 30000; // How long an emit with a callback waits for its answer
         this.options.connectInterval = parseInt(this.options.connectInterval as unknown as string, 10) || 1000; // Interval between connection attempts
         this.options.connectMaxAttempt = parseInt(this.options.connectMaxAttempt as unknown as string, 10) || 5; // Every connection attempt the interval increasing at options.connectInterval till max this number
 
@@ -424,8 +434,11 @@ class SocketClient {
                 this.close();
             }, this.options?.authTimeout || 3000);
         }
-        // Give the user that debugs it to analyse the answer
-        this.callbacks.push({ id, cb, ts: DEBUG ? 300_000 : Date.now() + 30_000 });
+        // While debugging, give the user five minutes to analyse the answer before the garbage
+        // collection calls the callback with 'timeout'. This used to read `ts: 300_000`, an
+        // absolute point in time in 1970, so turning DEBUG on expired every callback at once.
+        const ttl = DEBUG ? 300_000 : (this.options?.callbackTimeout ?? 30_000);
+        this.callbacks.push({ id, cb, ts: Date.now() + ttl });
         this.socket?.send(JSON.stringify([MESSAGE_TYPES.CALLBACK, id, name, args]));
     }
 

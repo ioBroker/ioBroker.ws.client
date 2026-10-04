@@ -3,7 +3,7 @@
  * ioBroker WebSockets
  * Copyright 2020-2026, bluefox <dogafox@gmail.com>
  * Released under the MIT License.
- * v 3.1.2 (2026_09_22)
+ * v 3.1.2 (2026_10_04)
  */
 if (typeof globalThis.process !== 'undefined') {
     globalThis.location ||= {
@@ -122,6 +122,7 @@ class SocketClient {
         this.options.pingInterval = parseInt(this.options.pingInterval, 10) || 5000;
         this.options.connectTimeout = parseInt(this.options.connectTimeout, 10) || 3000;
         this.options.authTimeout = parseInt(this.options.authTimeout, 10) || 3000;
+        this.options.callbackTimeout = parseInt(this.options.callbackTimeout, 10) || 30000;
         this.options.connectInterval = parseInt(this.options.connectInterval, 10) || 1000;
         this.options.connectMaxAttempt = parseInt(this.options.connectMaxAttempt, 10) || 5;
         this.sessionID = Date.now();
@@ -335,7 +336,8 @@ class SocketClient {
                 this.close();
             }, this.options?.authTimeout || 3000);
         }
-        this.callbacks.push({ id, cb, ts: DEBUG ? 300_000 : Date.now() + 30_000 });
+        const ttl = DEBUG ? 300_000 : (this.options?.callbackTimeout ?? 30_000);
+        this.callbacks.push({ id, cb, ts: Date.now() + ttl });
         this.socket?.send(JSON.stringify([MESSAGE_TYPES.CALLBACK, id, name, args]));
     }
     findAnswer(id, args) {
